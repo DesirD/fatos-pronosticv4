@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fatos Pronostic — Dashboard Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0e14;--surface:#111520;--card:#161c2d;--card2:#1c2438;--border:#232d45;--haiti-blue:#00209f;--haiti-red:#d21034;--gold:#f5c842;--green:#00e68a;--cyan:#00c8ff;--muted:#5a6a8a;--text:#dce8ff;--white:#ffffff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 70% 40% at 20% 0%,rgba(0,32,159,0.22) 0%,transparent 60%),radial-gradient(ellipse 60% 35% at 80% 100%,rgba(210,16,52,0.18) 0%,transparent 55%);pointer-events:none;}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:rgba(11,14,20,0.95);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(8px);}
+.brand{display:flex;align-items:center;gap:10px;}
+.logo{width:38px;height:38px;background:linear-gradient(135deg,var(--haiti-blue),#0035cc);border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.brand-name{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.dash-title{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--haiti-red);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.btn-hdr{background:transparent;border:1px solid var(--border);border-radius:6px;padding:6px 14px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.btn-hdr:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-hdr.danger:hover{border-color:var(--haiti-red);color:#ff6b6b;}
+
+/* Layout */
+.main{position:relative;z-index:5;max-width:1100px;margin:0 auto;padding:32px 24px;}
+.section-title{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* Tabs */
+.dash-tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:0;}
+.dash-tab{background:transparent;border:none;border-bottom:2px solid transparent;padding:10px 20px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.15s;margin-bottom:-1px;}
+.dash-tab:hover{color:var(--text);}
+.dash-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.card+.card{margin-top:16px;}
+
+/* User table */
+.user-table{width:100%;border-collapse:collapse;}
+.user-table th{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);}
+.user-table td{padding:10px 12px;border-bottom:1px solid rgba(35,45,69,0.5);font-size:13px;vertical-align:middle;}
+.user-table tr:last-child td{border-bottom:none;}
+.role-badge{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:rgba(0,200,255,0.1);color:var(--cyan);border:1px solid rgba(0,200,255,0.25);}
+.role-badge.admin{background:rgba(245,200,66,0.15);color:var(--gold);border-color:rgba(245,200,66,0.35);}
+.api-key-cell{font-family:monospace;font-size:11px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;color:var(--muted);transition:all 0.15s;white-space:nowrap;}
+.btn-sm:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-sm.danger:hover{border-color:var(--haiti-red);color:#ff6b6b;}
+.btn-sm.primary{border-color:var(--haiti-blue);color:var(--cyan);}
+.actions-cell{display:flex;gap:6px;align-items:center;}
+
+/* Add user form */
+.add-form{display:grid;grid-template-columns:1fr 1fr 1fr 120px auto;gap:10px;align-items:end;margin-top:20px;}
+@media(max-width:768px){.add-form{grid-template-columns:1fr 1fr;}}
+.form-field label{display:block;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.form-field input,.form-field select{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Nunito',sans-serif;outline:none;transition:border-color 0.2s;}
+.form-field input:focus,.form-field select:focus{border-color:var(--gold);}
+.form-field select option{background:var(--card);}
+.btn-add{background:linear-gradient(135deg,rgba(0,230,138,0.2),rgba(0,230,138,0.1));border:1px solid rgba(0,230,138,0.4);border-radius:7px;padding:9px 16px;color:var(--green);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.btn-add:hover{background:rgba(0,230,138,0.25);}
+.form-msg{font-size:12px;min-height:16px;margin-top:10px;}
+.form-msg.ok{color:var(--green);}
+.form-msg.err{color:#ff6b6b;}
+
+/* Logs */
+.log-filters{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.log-filters select,.log-filters input{background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'Nunito',sans-serif;outline:none;}
+.log-filters select:focus,.log-filters input:focus{border-color:var(--gold);}
+.log-filters select option{background:var(--card);}
+.log-table{width:100%;border-collapse:collapse;font-size:12px;}
+.log-table th{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);}
+.log-table td{padding:8px 10px;border-bottom:1px solid rgba(35,45,69,0.4);vertical-align:top;}
+.log-table tr:last-child td{border-bottom:none;}
+.log-table tr:hover td{background:rgba(255,255,255,0.02);}
+.action-badge{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:4px;}
+.action-login{background:rgba(0,230,138,0.12);color:var(--green);border:1px solid rgba(0,230,138,0.3);}
+.action-logout{background:rgba(90,106,138,0.2);color:var(--muted);border:1px solid var(--border);}
+.action-prediction{background:rgba(0,200,255,0.12);color:var(--cyan);border:1px solid rgba(0,200,255,0.3);}
+.action-combiner{background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid rgba(245,200,66,0.3);}
+.log-empty{text-align:center;color:var(--muted);padding:30px;font-size:13px;}
+.log-wrap{max-height:520px;overflow-y:auto;}
+.log-count{font-size:12px;color:var(--muted);margin-left:auto;}
+
+/* Modal */
+.modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;}
+.modal.show{display:flex;}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:440px;max-width:95vw;box-shadow:0 0 50px rgba(0,0,0,0.7);}
+.modal-box h3{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.modal-field input,.modal-field select{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Nunito',sans-serif;outline:none;}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--gold);}
+.modal-field select option{background:var(--card);}
+.modal-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;}
+.modal-actions button{flex:1;padding:10px;border-radius:7px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.15s;}
+.btn-confirm{background:var(--haiti-blue);color:#fff;}
+.btn-confirm:hover{background:#0029cc;}
+.btn-cancel{background:transparent;border:1px solid var(--border) !important;color:var(--muted);}
+.modal-msg{font-size:12px;text-align:center;min-height:16px;margin-top:10px;}
+.modal-msg.ok{color:var(--green);}
+.modal-msg.err{color:#ff6b6b;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">⚽</div>
+    <div>
+      <div class="brand-name">Fatos Pronostic</div>
+      <div class="dash-title">Dashboard Admin</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);">👤 <span id="adminName" style="color:var(--gold)"></span></span>
+    <a href="/" class="btn-hdr">← Application</a>
+    <button onclick="doLogout()" class="btn-hdr danger">Déconnexion</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Tabs -->
+  <div class="dash-tabs">
+    <button class="dash-tab active" onclick="switchTab('users')">👥 Utilisateurs</button>
+    <button class="dash-tab" onclick="switchTab('logs')">📋 Historique</button>
+  </div>
+
+  <!-- USERS TAB -->
+  <div class="tab-content active" id="tabUsers">
+    <div class="card">
+      <div class="section-title">👥 Gestion des utilisateurs</div>
+      <div style="overflow-x:auto;">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Utilisateur</th>
+              <th>Rôle</th>
+              <th>Clé API The Odds</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Add user form -->
+      <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px;">
+        <div class="section-title" style="margin-bottom:14px;">➕ Ajouter un utilisateur</div>
+        <div class="add-form">
+          <div class="form-field">
+            <label>Nom d'utilisateur</label>
+            <input type="text" id="newUsername" placeholder="johndoe">
+          </div>
+          <div class="form-field">
+            <label>Mot de passe</label>
+            <input type="password" id="newPassword" placeholder="••••••••">
+          </div>
+          <div class="form-field">
+            <label>Clé The Odds API</label>
+            <input type="text" id="newApiKey" placeholder="abc123…">
+          </div>
+          <div class="form-field">
+            <label>Rôle</label>
+            <select id="newRole">
+              <option value="user">Utilisateur</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn-add" onclick="addUser()">+ Ajouter</button>
+          </div>
+        </div>
+        <div class="form-msg" id="addMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS TAB -->
+  <div class="tab-content" id="tabLogs">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="section-title" style="margin-bottom:0;">📋 Historique d'activité</div>
+        <div class="log-filters" style="margin-bottom:0;flex:1;">
+          <select id="logUserFilter" onchange="loadLogs()">
+            <option value="">Tous les utilisateurs</option>
+          </select>
+          <select id="logActionFilter" onchange="filterLogsClient()">
+            <option value="">Toutes les actions</option>
+            <option value="login">Connexion</option>
+            <option value="logout">Déconnexion</option>
+            <option value="prediction">Prédiction</option>
+            <option value="combiner">Combiné</option>
+          </select>
+          <button class="btn-sm primary" onclick="loadLogs()">🔄 Rafraîchir</button>
+          <span class="log-count" id="logCount"></span>
+        </div>
+      </div>
+      <div class="log-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Date / Heure</th>
+              <th>Utilisateur</th>
+              <th>Action</th>
+              <th>IP</th>
+              <th>Navigateur / Appareil</th>
+              <th>Détail</th>
+            </tr>
+          </thead>
+          <tbody id="logTbody"><tr><td colspan="4" class="log-empty">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ Modifier l'utilisateur</h3>
+    <input type="hidden" id="editTarget">
+    <div class="modal-field">
+      <label>Nouveau mot de passe <span style="color:var(--muted);font-size:10px;">(vide = inchangé)</span></label>
+      <input type="password" id="editPassword" placeholder="••••••••">
+    </div>
+    <div class="modal-field">
+      <label>Clé The Odds API</label>
+      <input type="text" id="editApiKey" placeholder="abc123…">
+      <div class="modal-hint">La clé API utilisée par ce compte pour les prédictions</div>
+    </div>
+    <div class="modal-field">
+      <label>Rôle</label>
+      <select id="editRole">
+        <option value="user">Utilisateur</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="modal-msg" id="editMsg"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-confirm" onclick="saveEdit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allLogs = [];
+
+// Init
+(async function(){
+  const r = await fetch('/api/auth/me');
+  if(r.status===401){window.location.href='/login';return;}
+  const d = await r.json();
+  if(d.role !== 'admin'){window.location.href='/';return;}
+  document.getElementById('adminName').textContent = d.username;
+  loadUsers();
+  loadLogs();
+})();
+
+function switchTab(tab){
+  document.querySelectorAll('.dash-tab').forEach((t,i)=>t.classList.toggle('active',['users','logs'][i]===tab));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById(tab==='users'?'tabUsers':'tabLogs').classList.add('active');
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+async function loadUsers(){
+  const r = await fetch('/api/users');
+  const users = await r.json();
+  // Populate log filter
+  const sel = document.getElementById('logUserFilter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tous les utilisateurs</option>' +
+    users.map(u=>`<option value="${esc(u.username)}">${esc(u.username)}</option>`).join('');
+  if(cur) sel.value = cur;
+  // Render table
+  document.getElementById('userTbody').innerHTML = users.map(u=>`
+    <tr>
+      <td><strong>${esc(u.username)}</strong></td>
+      <td><span class="role-badge ${u.role==='admin'?'admin':''}">${u.role==='admin'?'Admin':'User'}</span></td>
+      <td><span class="api-key-cell" title="${esc(u.api_key||'')}">${u.api_key?maskKey(u.api_key):'<span style="color:var(--muted);font-style:italic">Non définie</span>'}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-sm" onclick="openEdit('${esc(u.username)}','${u.role}','${esc(u.api_key||'')}')">✏️ Modifier</button>
+          <button class="btn-sm danger" onclick="deleteUser('${esc(u.username)}')">🗑️ Supprimer</button>
+          <button class="btn-sm primary" onclick="viewUserLogs('${esc(u.username)}')">📋 Logs</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function maskKey(key){
+  if(!key||key.length<8)return'••••••••';
+  return key.substring(0,4)+'••••'+key.substring(key.length-4);
+}
+
+async function addUser(){
+  const u = document.getElementById('newUsername').value.trim();
+  const p = document.getElementById('newPassword').value;
+  const k = document.getElementById('newApiKey').value.trim();
+  const role = document.getElementById('newRole').value;
+  const msg = document.getElementById('addMsg');
+  if(!u||!p){setMsg(msg,'Nom d\'utilisateur et mot de passe requis','err');return;}
+  const r = await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,role,api_key:k})});
+  const d = await r.json();
+  if(d.success){
+    setMsg(msg,'Utilisateur créé avec succès ✓','ok');
+    document.getElementById('newUsername').value='';
+    document.getElementById('newPassword').value='';
+    document.getElementById('newApiKey').value='';
+    loadUsers();
+  } else {
+    setMsg(msg,d.error,'err');
+  }
+}
+
+async function deleteUser(username){
+  if(!confirm(`Supprimer l'utilisateur "${username}" ? Cette action est irréversible.`))return;
+  const r = await fetch(`/api/users/${encodeURIComponent(username)}`,{method:'DELETE'});
+  const d = await r.json();
+  if(d.success){loadUsers();}
+  else{alert(d.error);}
+}
+
+function openEdit(username,role,apiKey){
+  document.getElementById('editTarget').value = username;
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editApiKey').value = apiKey;
+  document.getElementById('editRole').value = role;
+  document.getElementById('editMsg').textContent = '';
+  document.getElementById('editModal').classList.add('show');
+}
+function closeModal(){document.getElementById('editModal').classList.remove('show');}
+
+async function saveEdit(){
+  const username = document.getElementById('editTarget').value;
+  const body = {
+    role: document.getElementById('editRole').value,
+    api_key: document.getElementById('editApiKey').value.trim()
+  };
+  const pw = document.getElementById('editPassword').value;
+  if(pw) body.password = pw;
+  const r = await fetch(`/api/users/${encodeURIComponent(username)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d = await r.json();
+  const msg = document.getElementById('editMsg');
+  if(d.success){setMsg(msg,'Modifié avec succès ✓','ok');loadUsers();setTimeout(closeModal,900);}
+  else{setMsg(msg,d.error,'err');}
+}
+
+// ─── Logs ─────────────────────────────────────────────────────────────────────
+async function loadLogs(){
+  const user = document.getElementById('logUserFilter').value;
+  const url = user ? `/api/logs?username=${encodeURIComponent(user)}` : '/api/logs';
+  const r = await fetch(url);
+  allLogs = await r.json();
+  renderLogs(allLogs);
+}
+
+function filterLogsClient(){
+  const action = document.getElementById('logActionFilter').value;
+  const filtered = action ? allLogs.filter(l=>l.action===action) : allLogs;
+  renderLogs(filtered);
+}
+
+function parseUA(ua){
+  if(!ua) return {browser:'—',device:'—'};
+  let browser='';
+  if(/Edg\//.test(ua)) browser='Edge';
+  else if(/OPR\/|Opera/.test(ua)) browser='Opera';
+  else if(/Chrome\//.test(ua)&&!/Chromium/.test(ua)) browser='Chrome';
+  else if(/Firefox\//.test(ua)) browser='Firefox';
+  else if(/Safari\//.test(ua)&&!/Chrome/.test(ua)) browser='Safari';
+  else if(/MSIE|Trident/.test(ua)) browser='IE';
+  else browser='Autre';
+  // Version
+  const vm = ua.match(/(Chrome|Firefox|Safari|Edg|OPR)[\/ ]([\d.]+)/);
+  if(vm) browser += ' '+vm[2].split('.')[0];
+  // OS/Device
+  let device='';
+  if(/iPhone/.test(ua)){const m=ua.match(/iPhone OS ([\d_]+)/);device='📱 iPhone'+(m?' iOS '+m[1].replace(/_/g,'.'):'');}
+  else if(/iPad/.test(ua)){device='📱 iPad';}
+  else if(/Android/.test(ua)){
+    const m=ua.match(/Android ([\d.]+)/);
+    const dm=ua.match(/; ([^;)]+) Build\//);
+    device='📱 '+(dm?dm[1]:'Android')+(m?' '+m[1]:'');
+  }
+  else if(/Windows NT/.test(ua)){const m=ua.match(/Windows NT ([\d.]+)/);const v={'10.0':'10','6.3':'8.1','6.2':'8','6.1':'7'};device='💻 Windows '+(v[m&&m[1]]||m&&m[1]||'');}
+  else if(/Mac OS X/.test(ua)){const m=ua.match(/Mac OS X ([\d_]+)/);device='💻 macOS'+(m?' '+m[1].replace(/_/g,'.'):'');}
+  else if(/Linux/.test(ua)){device='💻 Linux';}
+  else device='💻 Autre';
+  return {browser,device};
+}
+
+function renderLogs(logs){
+  document.getElementById('logCount').textContent = `${logs.length} entrée${logs.length>1?'s':''}`;
+  if(!logs.length){
+    document.getElementById('logTbody').innerHTML='<tr><td colspan="4" class="log-empty">Aucune activité enregistrée</td></tr>';
+    return;
+  }
+  const actionClass = {login:'action-login',logout:'action-logout',prediction:'action-prediction',combiner:'action-combiner'};
+  const actionLabel = {login:'Connexion',logout:'Déconnexion',prediction:'Prédiction',combiner:'Combiné'};
+  document.getElementById('logTbody').innerHTML = logs.map(l=>`
+    <tr>
+      <td style="color:var(--muted);white-space:nowrap;font-size:11px;">${l.timestamp}</td>
+      <td><strong style="color:var(--cyan);">${esc(l.username)}</strong></td>
+      <td><span class="action-badge ${actionClass[l.action]||''}">${actionLabel[l.action]||l.action}</span></td>
+      <td style="color:var(--muted);font-size:11px;white-space:nowrap;">${esc(l.ip||'—')}</td>
+      <td style="font-size:11px;max-width:220px;">
+        <div style="color:var(--text);">${parseUA(l.ua||'').browser}</div>
+        <div style="color:var(--muted);font-size:10px;">${parseUA(l.ua||'').device}</div>
+      </td>
+      <td style="color:var(--muted);font-size:11px;">${esc(l.detail||'')}</td>
+    </tr>`).join('');
+}
+
+function viewUserLogs(username){
+  document.getElementById('logUserFilter').value = username;
+  switchTab('logs');
+  loadLogs();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function setMsg(el,text,type){el.textContent=text;el.className='form-msg '+(type||'');setTimeout(()=>{el.textContent='';el.className='form-msg';},3500);}
+
+async function doLogout(){
+  await fetch('/api/auth/logout',{method:'POST'});
+  window.location.href='/login';
+}
+
+document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+</script>
+</body>
+</html>
